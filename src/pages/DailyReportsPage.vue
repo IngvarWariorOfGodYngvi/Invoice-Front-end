@@ -171,10 +171,6 @@ export default defineComponent({
     this.getProductsList();
   },
   data() {
-//  stwórz sobie w data()
-//  pole na te dane, będące obiektem, którego kluczami są id Twoich checkboxów, a wartością obiekt: zawartość inputa i status zaznaczenia checkboxa.
-//  Podczas wysyłania całego formularza, przejdź po tym obiekcie, wybierz tylko te pola, które są zaznaczone i przerób do struktury jaką potrzebujesz wysłać.
-// Ewentualnie zamiast tego obiektu na starcie możesz zrobić tablicę obiektów, z polem na id checkboxa.
     return {
       record: {
         id: [],
