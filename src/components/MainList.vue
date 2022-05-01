@@ -28,7 +28,7 @@
         <q-item class="q-pa-none xyz2" clickable tag="a" target="_self" :href="app + 'reports'" width="max">
             <div class="row text-grey-7 text-left">
               <q-icon class="q-pa-md text-h5" name="summarize" />
-            <div class="self-center text-black" tabindex="1">Raporty</div>
+            <div class="self-center text-black" tabindex="1">Zestawienia</div>
             </div>
         </q-item>
       </div>

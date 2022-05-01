@@ -4,16 +4,13 @@
       <q-toolbar>
         <q-btn
           flat
+          class="q-pa-none text-h6"
           dense
-          round
           icon="menu"
           aria-label="Menu"
           @click="toggleLeftDrawer"
+          label="FAKTURY"
         />
-
-        <q-toolbar-title>
-          Faktury
-        </q-toolbar-title>
 
         <!-- <div>Quasar v{{ $q.platform }}</div> -->
         <!-- <div>Quasar v{{ $q.screen }}</div> -->
@@ -73,7 +70,7 @@ const linksList = [
     link: 'http://' + App.prod + 'dailyreports'
   },
   {
-    title: 'Raporty',
+    title: 'Zestawienia',
     icon: 'summarize',
     link: 'http://' + App.prod + 'reports'
   },

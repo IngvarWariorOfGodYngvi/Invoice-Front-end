@@ -114,9 +114,9 @@
                 class="full-width"
                 filled
                 dense
-                v-model="dateOfExposed"
+                v-model="dateOfPayment"
                 mask="####-##-##"
-                label="Data wystawienia faktury"
+                label="Data opłacenia faktury"
               >
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">
@@ -125,7 +125,7 @@
                       transition-show="scale"
                       transition-hide="scale"
                     >
-                      <q-date v-model="dateOfExposed">
+                      <q-date v-model="dateOfPayment">
                         <div class="row items-center justify-end">
                           <q-btn
                             v-close-popup
@@ -146,9 +146,9 @@
                 class="full-width"
                 filled
                 dense
-                v-model="dateOfPayment"
+                v-model="dateOfExposed"
                 mask="####-##-##"
-                label="Data opłacenia faktury"
+                label="Data wystawienia faktury"
               >
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">
@@ -157,7 +157,7 @@
                       transition-show="scale"
                       transition-hide="scale"
                     >
-                      <q-date v-model="dateOfPayment">
+                      <q-date v-model="dateOfExposed">
                         <div class="row items-center justify-end">
                           <q-btn
                             v-close-popup
@@ -252,7 +252,6 @@
             <q-input
               class="col-3"
               input-class="text-right"
-              prefix="-"
               suffix="zł"
               filled
               dense
@@ -312,7 +311,7 @@
         </template>
         </q-select>
         <q-item dense>
-          <q-btn @click="getAllInvoices(true,month,year),getAllInvoices(false,month,year)" label="wybierz"></q-btn>
+          <q-btn @click="getAllInvoices(true,month,year),getAllInvoices(false,month,year),getAllIncome(month, year)" label="wybierz"></q-btn>
         </q-item>
       </q-item>
         <div class="text-center text-bold q-pa-xs">Faktury opłacone Gotówką</div>
@@ -570,7 +569,12 @@ export default defineComponent({
         method: "GET",
       }).then((response) => {
         response.json().then((response) => {
-            this.allIncome = response;
+          if (transfer_cash) {
+            this.invoicesCash = response;
+          }
+          if (!transfer_cash) {
+            this.invoicesTransfer = response
+          }
         });
       });
     },
@@ -648,8 +652,8 @@ export default defineComponent({
           response.text().then((response) => {
             this.message = response;
             this.success = true;
-            this.getAllInvoices(true);
-            this.getAllInvoices(false);
+            this.getAllInvoices(true,null,null);
+            this.getAllInvoices(false,null,null);
             this.autoClose();
           });
         }
