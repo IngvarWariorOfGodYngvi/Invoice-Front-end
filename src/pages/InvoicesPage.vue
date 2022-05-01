@@ -174,7 +174,7 @@
             </q-item>
           </div>
         </div>
-        <div>
+        <div class="text-white">
           <q-item dense class="row items-center rounded">
             <div v-if="!transfer_cash" class="q-pa-xs bg-primary text-center">
               PRZELEW
@@ -198,13 +198,29 @@
             <div v-if="bill_invoice" class="q-pa-xs text-grey-4 text-center">
               PARAGON
             </div>
-            <q-toggle color="primary" keep-color v-model="bill_invoice">
+            <q-toggle color="primary" @click="KPPayment=false" keep-color v-model="bill_invoice">
             </q-toggle>
             <div v-if="bill_invoice" class="q-pa-xs row bg-primary">
               FAKTURA
             </div>
             <div v-if="!bill_invoice" class="q-pa-xs row text-grey-4">
               FAKTURA
+            </div>
+          </q-item>
+          <q-item dense class="row items-center rounded">
+            <div v-if="!KPPayment" class="q-pa-xs bg-primary text-center">
+              NIEDOTYCZY
+            </div>
+            <div v-if="KPPayment" class="q-pa-xs text-grey-4 text-center">
+              NIEDOTYCZY
+            </div>
+            <q-toggle color="primary" @click="bill_invoice=false,transfer_cash=true" keep-color v-model="KPPayment">
+            </q-toggle>
+            <div v-if="KPPayment" class="q-pa-xs row bg-primary">
+              WPŁATA NA KP
+            </div>
+            <div v-if="!KPPayment" class="q-pa-xs row text-grey-4">
+              WPŁATA NA KP
             </div>
           </q-item>
           <q-item dense>
@@ -218,22 +234,31 @@
             ></q-input>
             <q-input
               class="col"
-              v-else
+              v-if="!bill_invoice&&!KPPayment"
               filled
               dense
               v-model="invoiceNumber"
               label="Numer Paragonu"
             ></q-input>
+            <q-input
+              class="col"
+              v-if="!bill_invoice&&KPPayment"
+              filled
+              dense
+              v-model="invoiceNumber"
+              label="Numer KP"
+            ></q-input>
             <div class="q-pr-md q-pl-md"></div>
             <q-input
               class="col-3"
               input-class="text-right"
+              prefix="-"
               suffix="zł"
               filled
               dense
               v-model="amount"
               label="Kwota"
-              onkeypress="return (event.charCode > 47 && event.charCode < 58 || event.charCode === 44 || event.charCode === 46)"
+              onkeypress="return (event.charCode > 47 && event.charCode < 58 || event.charCode === 44 || event.charCode === 46 || event.charCode === 45)"
             ></q-input>
           </q-item>
           <q-item dense>
@@ -277,7 +302,20 @@
         </div>
       </div>
       <div class="col">
-        <div class="text-center text-bold q-pa-xs">Faktury opłacone Gotówką w tym miesiącu</div>
+        <q-item class="q-pl-none bg-white">
+        <q-item class="full-width" dense><q-select v-model="year" :options="years" dense filled use-input hide-selected fill-input input-debounce="0" stack-label label="Wybierz rok" class="col"></q-select></q-item>
+        <q-select v-model="month" :options="months"  dense filled use-input hide-selected fill-input input-debounce="0" label="Wybierz miesiąc" class="col-3">
+          <template v-slot:option="scope">
+          <q-item class="q-pa-none" dense v-bind="scope.itemProps.dense = true">
+            <q-item v-bind="scope.itemProps" class="full-width">{{scope.opt}}</q-item>
+          </q-item>
+        </template>
+        </q-select>
+        <q-item dense>
+          <q-btn @click="getAllInvoices(true,month,year),getAllInvoices(false,month,year)" label="wybierz"></q-btn>
+        </q-item>
+      </q-item>
+        <div class="text-center text-bold q-pa-xs">Faktury opłacone Gotówką</div>
       <q-virtual-scroll :virtual-scroll-item-size="48"
       :virtual-scroll-sticky-size-start="48"
       :virtual-scroll-sticky-size-end="32" type="table" dense visible :items="invoicesCash" >
@@ -304,7 +342,7 @@
               <th class="text-left"></th>
               <th class="text-left"></th>
               <th class="text-left"></th>
-              <th class="text-left">{{amountSumCash}} zł</th>
+              <th class="text-left">{{viewCurrency (getSum(invoicesCash))}}</th>
               <th class="text-left"></th>
             </tr>
         </tfoot>
@@ -317,12 +355,12 @@
               <td>{{item.dateOfExposed}}</td>
               <td>{{item.dateOfPayment}}</td>
               <td>{{item.description}}</td>
-              <td>{{item.amount}} zł</td>
+              <td>{{viewCurrency (item.amount)}}</td>
               <td>{{item.categoryName}}</td>
             </tr>
         </template>
       </q-virtual-scroll>
-        <div class="text-center text-bold q-pa-xs">Faktury opłacone Przelewem w tym miesiącu</div>
+        <div class="text-center text-bold q-pa-xs">Faktury opłacone Przelewem</div>
       <q-virtual-scroll :virtual-scroll-item-size="48"
       :virtual-scroll-sticky-size-start="48"
       :virtual-scroll-sticky-size-end="32" type="table" visible dense :items="invoicesTransfer" >
@@ -349,7 +387,7 @@
               <th class="text-left"></th>
               <th class="text-left"></th>
               <th class="text-left"></th>
-              <th class="text-left">{{amountSumTransfer}} zł</th>
+              <th class="text-left">{{viewCurrency (getSum(invoicesTransfer))}}</th>
               <th class="text-left"></th>
             </tr>
         </tfoot>
@@ -362,7 +400,52 @@
               <td>{{item.dateOfExposed}}</td>
               <td>{{item.dateOfPayment}}</td>
               <td>{{item.description}}</td>
-              <td>{{item.amount}} zł</td>
+              <td>{{viewCurrency (item.amount)}}</td>
+              <td>{{item.categoryName}}</td>
+            </tr>
+        </template>
+      </q-virtual-scroll>
+        <div class="text-center text-bold q-pa-xs">Wpływy na KP i Konto</div>
+      <q-virtual-scroll :virtual-scroll-item-size="48"
+      :virtual-scroll-sticky-size-start="48"
+      :virtual-scroll-sticky-size-end="32" type="table" visible dense :items="allIncome" >
+        <template v-slot:before>
+          <thead class="thead-sticky full-width">
+            <tr>
+              <th class="text-left">lp</th>
+              <th class="text-left"><div>Nazwa</div><div>Sprzedawcy</div></th>
+              <th class="text-left">numer</th>
+              <th class="text-left"><div>data</div><div>wystawienia</div></th>
+              <th class="text-left"><div>data</div><div>opłacenia</div></th>
+              <th class="text-left">opis</th>
+              <th class="text-left">kwota</th>
+              <th class="text-left">kategoria</th>
+            </tr>
+          </thead>
+        </template>
+                <template v-slot:after>
+        <tfoot class="tfoot-sticky text-left">
+            <tr>
+              <th class="text-left"></th>
+              <th class="text-left"></th>
+              <th class="text-left"></th>
+              <th class="text-left"></th>
+              <th class="text-left"></th>
+              <th class="text-left"></th>
+              <th class="text-left">{{viewCurrency (getSum(allIncome))}}</th>
+              <th class="text-left"></th>
+            </tr>
+        </tfoot>
+      </template>
+        <template v-slot="{ item, index }">
+            <tr :key="index" dense style="cursor:pointer">
+              <td>{{index+1}}</td>
+              <td>{{item.sellerName}}</td>
+              <td>{{item.number}}</td>
+              <td>{{item.dateOfExposed}}</td>
+              <td>{{item.dateOfPayment}}</td>
+              <td>{{item.description}}</td>
+              <td>{{viewCurrency (item.amount)}}</td>
               <td>{{item.categoryName}}</td>
             </tr>
         </template>
@@ -414,14 +497,17 @@ export default defineComponent({
   created() {
     this.getSellersListNames();
     this.getSellersListNip();
-    this.getAllInvoices(true);
-    this.getAllInvoices(false);
+    this.getAllInvoices(true, null, null);
+    this.getAllInvoices(false, null, null);
+    this.getAllIncome(null, null);
     this.getCategories();
+    this.getAllYears();
   },
   data() {
     return {
       bill_invoice: true,
       transfer_cash: true,
+      KPPayment:false,
       dateOfExposed: "",
       dateOfPayment: "",
       invoiceNumber: "",
@@ -429,6 +515,10 @@ export default defineComponent({
       description: "",
       name: "",
       nip: "",
+      month: null,
+      months: ["styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec","lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"],
+      year: new Date().getFullYear(),
+      years: [ "2021", "2022", "2023" ],
       categoryName: null,
       sellerName: null,
       sellerNip: null,
@@ -437,6 +527,7 @@ export default defineComponent({
       filtersNip: [],
       invoicesCash: [],
       invoicesTransfer: [],
+      allIncome: [],
       categories: [],
       options: [],
       optionsCategories: [],
@@ -458,23 +549,37 @@ export default defineComponent({
         this.timer = 0;
       }, 1000);
     },
-    getAllInvoices(transfer_cash) {
-      fetch("http://" + this.local + "/invoice/getAllFromMonth?transfer_cash=" + transfer_cash, {
+    getSum(arr) {
+      var amount = 0;
+      for (var i = 0; i < arr.length; i++){
+        amount += Number(arr[i].amount);
+      }
+      return amount;
+    },
+    getAllYears() {
+      fetch("http://" + this.local + "/report/getYears", {
         method: "GET",
       }).then((response) => {
         response.json().then((response) => {
-          if (transfer_cash){
-            this.invoicesCash = response;
-            for (var i = 0; i < this.invoicesCash.length; i++) {
-              this.amountSumCash = Number(this.amountSumCash) + Number(this.invoicesCash[i].amount);
-            }
-          }
-          if (!transfer_cash){
-            this.invoicesTransfer = response;
-            for (var i = 0; i < this.invoicesCash.length; i++) {
-              this.amountSumTransfer = Number(this.amountSumTransfer) + Number(this.invoicesTransfer[i].amount);
-            }
-          }
+          this.years = response;
+        });
+      });
+    },
+    getAllInvoices(transfer_cash, month, year) {
+      fetch("http://" + this.local + "/invoice/getAll?transfer_cash=" + transfer_cash + "&month=" + month + "&year=" + year, {
+        method: "GET",
+      }).then((response) => {
+        response.json().then((response) => {
+            this.allIncome = response;
+        });
+      });
+    },
+    getAllIncome(month, year) {
+      fetch("http://" + this.local + "/invoice/getAllIncome?&month=" + month + "&year=" + year, {
+        method: "GET",
+      }).then((response) => {
+        response.json().then((response) => {
+            this.allIncome = response;
         });
       });
     },
@@ -505,14 +610,23 @@ export default defineComponent({
         });
       });
     },
+    viewCurrency (money) {
+      if (money === undefined) { money = '0'}
+      var formatterPL = new Intl.NumberFormat('pl-PL',{style: 'currency', currency: 'PLN'})
+      var cash = formatterPL.format(money)
+      return cash
+    },
     createInvoice(name, nip) {
+       var amount = this.amount.replace(/\,/gi, '.')
+      if (this.KPPayment) {amount = "-" + amount}
+      if (this.KPPayment) {this.invoiceNumber = "KP " + this.invoiceNumber}
       const data = {
         bill_invoice: this.bill_invoice,
         transfer_cash: this.transfer_cash,
         dateOfExposed: this.dateOfExposed.replace(/\//gi, '-'),
         dateOfPayment: this.dateOfPayment.replace(/\//gi, '-'),
         number: this.invoiceNumber,
-        amount: this.amount.replace(/\,/gi, '.'),
+        amount: amount,
         description: this.description,
         categoryName: this.categoryName,
       };
@@ -524,14 +638,14 @@ export default defineComponent({
         },
       }).then((response) => {
         if (response.status === 400) {
-          response.json().then((response) => {
+          response.text().then((response) => {
             this.message = response;
             this.failure = true;
             this.autoClose();
           });
         }
         if (response.status === 200) {
-          response.json().then((response) => {
+          response.text().then((response) => {
             this.message = response;
             this.success = true;
             this.getAllInvoices(true);

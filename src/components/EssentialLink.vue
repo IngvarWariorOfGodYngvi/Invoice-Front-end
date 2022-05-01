@@ -3,6 +3,7 @@
     clickable
     tag="a"
     :href="link"
+    @click="refresh()"
   >
     <q-item-section
       v-if="icon"
@@ -42,6 +43,13 @@ export default defineComponent({
     icon: {
       type: String,
       default: ''
+    }
+  },
+  methods: {
+    refresh () {
+      if (window.location.href === this.link) {
+        window.location.reload()
+      }
     }
   }
 })
